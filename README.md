@@ -1,5 +1,6 @@
 <FFT>
 FFT of 100000000 elements took 0 milliseconds (7746 nanoseconds)
+
 Overall MKL handling took 5 milliseconds (5163261 nanoseconds)
 </FFT>
 
