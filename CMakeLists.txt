@@ -16,11 +16,12 @@ endif()
 # set(ASAN -fsanitize=address,undefined)
 set(ASAN "")
 
-set(OPTLEVEL -O0)
+set(OPTLEVEL -O2)
 
 add_compile_options(
     ${OPTLEVEL}
     ${ASAN}
+    -march=native
     -fPIE
     -Wall
     -Wextra
@@ -55,5 +56,6 @@ add_link_options(
 )
 
 add_executable(scalar
+    source/sum_avx2.cpp
     source/scalar.cpp
 )

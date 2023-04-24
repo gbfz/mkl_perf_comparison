@@ -1,7 +1,13 @@
+#include <mkl_dfti.h>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics.hpp>
+#include <boost/range/numeric.hpp>
+#include <fmt/format.h>
+
+#include "sum_avx2.hpp"
+
 #include <cmath>
 #include <cstdio>
-#include <mkl_dfti.h>
-#include <fmt/format.h>
 #include <chrono>
 #include <string_view>
 #include <type_traits>
@@ -15,11 +21,6 @@
 #include <execution>
 #include <random>
 #include <limits>
-
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics.hpp>
-
-#include <boost/range/numeric.hpp>
 
 static constexpr const auto N = 100'000'000;
 
@@ -44,18 +45,21 @@ std::vector<T> vec_of()
 template <typename F, typename... Args>
 void measure(std::string_view msg, F&& f, Args&&... args)
 {
-    auto begin = std::chrono::high_resolution_clock::now();
+    using namespace std::chrono;
+
+    auto begin = high_resolution_clock::now();
+
     std::invoke(f, std::forward<Args...>(args)...);
-    auto end = std::chrono::high_resolution_clock::now();
-    // auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
-    auto nano = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    auto milli = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+
+    auto end = high_resolution_clock::now();
+    auto nano = duration_cast<nanoseconds>(end - begin).count();
+    auto milli = duration_cast<milliseconds>(end - begin).count();
     fmt::print("{} took {} milliseconds ({} nanoseconds)\n", msg, milli, nano);
 }
 
 void test_mkl_fft()
 {
-    fmt::print("<FFT>\n");
+    fmt::print("# FFT\n");
     auto input = vec_of<N, double>();
     decltype(input) output;
     output.reserve(N);
@@ -76,12 +80,12 @@ void test_mkl_fft()
     });
     // please do not optimize all this away
     fmt::print(stderr, "{}", output[N / 2]);
-    fmt::print("</FFT>\n\n");
+    fmt::print("\n\n");
 }
 
 void test_vec_memcpy()
 {
-    fmt::print("<std::memcpy>\n");
+    fmt::print("# std::memcpy\n");
     auto input = vec_of<N, double>();
     decltype(input) output;
     output.resize(N);
@@ -92,12 +96,12 @@ void test_vec_memcpy()
     });
     // please do not optimize all this away
     fmt::print(stderr, "{}", output[N / 2]);
-    fmt::print("</std::memcpy>\n\n");
+    fmt::print("\n\n");
 }
 
 void test_vec_std_accumulate()
 {
-    fmt::print("<std::accumulate>\n");
+    fmt::print("# std::accumulate\n");
     auto input = vec_of<N, double>();
 
     measure(fmt::format("accumulate of {} elements", N), [&]
@@ -105,12 +109,12 @@ void test_vec_std_accumulate()
         [[maybe_unused]]
         volatile const auto _ = std::accumulate(input.begin(), input.end(), 0.0);
     });
-    fmt::print("</std::accumulate>\n\n");
+    fmt::print("\n\n");
 }
 
 void test_vec_boost_accumulate()
 {
-    fmt::print("<boost::accumulate>\n");
+    fmt::print("# boost::accumulate\n");
     auto input = vec_of<N, double>();
 
     measure(fmt::format("accumulate of {} elements", N), [&]
@@ -118,12 +122,12 @@ void test_vec_boost_accumulate()
         [[maybe_unused]]
         volatile const auto _ = boost::accumulate(input, 0.0);
     });
-    fmt::print("</boost::accumulate>\n\n");
+    fmt::print("\n\n");
 }
 
 void test_vec_boost_mean()
 {
-    fmt::print("<boost::accumulators::mean>\n");
+    fmt::print("# boost::accumulators::mean\n");
     auto input = vec_of<N, double>();
 
     using namespace boost::accumulators;
@@ -137,28 +141,29 @@ void test_vec_boost_mean()
         [[maybe_unused]]
         volatile const auto _m = mean(acc);
     });
-    fmt::print("</boost::accumulators::mean>\n\n");
+    fmt::print("\n\n");
 }
 
 void test_quadratic_mean()
 {
-    fmt::print("<quadratic mean>\n");
+    fmt::print("# quadratic mean\n");
     auto input = vec_of<N, double>();
 
     measure(fmt::format("quadratic mean of {} elements", N), [&]
     {
-        auto sum_of_squares = std::accumulate(input.begin(), input.end(), 0.0, std::plus<double>{});
+        // auto sum_of_squares = std::accumulate(input.begin(), input.end(), 0.0, std::plus<double>{});
+        auto sum_of_squares = sum_avx2(input);
         [[maybe_unused]]
         volatile const auto v = std::sqrt(sum_of_squares / N);
 
         fmt::print(stderr, "{}", v);
     });
-    fmt::print("</quadratic mean>\n\n");
+    fmt::print("\n\n");
 }
 
 void test_geometric_mean()
 {
-    fmt::print("<geometric mean>\n");
+    fmt::print("# geometric mean\n");
     auto input = vec_of<N, double>();
 
     measure(fmt::format("geometric mean of {} elements", N), [&]
@@ -167,7 +172,7 @@ void test_geometric_mean()
         [[maybe_unused]]
         volatile const auto v = std::pow(product_of_squares, 1 / N);
     });
-    fmt::print("</geometric mean>\n");
+    fmt::print("\n\n");
 }
 
 int main()
