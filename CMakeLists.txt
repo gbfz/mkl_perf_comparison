@@ -34,11 +34,15 @@ include_directories(
     $ENV{MKLROOT}/include
 )
 
+add_subdirectory(benchmark)
+
 add_link_options(
     ${OPTLEVEL}
     ${ASAN}
     -lfmt
     -ltbb
+    -lbenchmark
+    -lboost_system
     $ENV{MKLROOT}/lib/intel64/libmkl_scalapack_lp64.a
     -L$ENV{MKLROOT}/lib/intel64
     -lmkl_intel_lp64
@@ -58,4 +62,13 @@ add_link_options(
 add_executable(scalar
     source/sum_avx2.cpp
     source/scalar.cpp
+)
+
+add_executable(fft
+    source/bench_mkl_fft.cpp
+    source/helpers.cpp
+)
+
+target_link_libraries(fft
+    benchmark::benchmark
 )
