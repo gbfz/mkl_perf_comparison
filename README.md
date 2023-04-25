@@ -1,4 +1,5 @@
 # With -O2:
+<pre>
 -------------------------------------------------------------------------------------
 Benchmark                                           Time             CPU   Iterations
 -------------------------------------------------------------------------------------
@@ -23,8 +24,10 @@ benchmark_boost_accumulators_mean/10000000   41945002 ns     41821085 ns        
 benchmark_quadratic_mean/100000                103541 ns       103212 ns         6966
 benchmark_quadratic_mean/1000000              1337697 ns      1332065 ns          527
 benchmark_quadratic_mean/10000000            13430479 ns     13404835 ns           52
+</pre>
 
 # With -O0:
+<pre>
 -------------------------------------------------------------------------------------
 Benchmark                                           Time             CPU   Iterations
 -------------------------------------------------------------------------------------
@@ -49,3 +52,4 @@ benchmark_boost_accumulators_mean/10000000 6576087106 ns   6568266116 ns        
 benchmark_quadratic_mean/100000                507221 ns       506570 ns         1387
 benchmark_quadratic_mean/1000000              5459135 ns      5448857 ns          128
 benchmark_quadratic_mean/10000000            54681203 ns     54595713 ns           13
+</pre>
